@@ -11,10 +11,15 @@
     <script>
       $(function () {
         var jqconsole = $('#console').jqconsole('Konoha3 Console\n', '>>> ');
+        var konoha = new KonohaContext(jqconsole);
+        var uline  = 0;
         var startPrompt = function () {
           // Start the prompt with history enabled.
           jqconsole.Prompt(true, function (input) {
-            jqconsole.Write(input + '\n', 'jqconsole-output'); //We need wrap this.
+            var wb = "";
+            konoha.Eval(input,uline,wb);
+            jqconsole.Write(wb + '\n', 'jqconsole-output'); //We need wrap this.
+            uline++;
             startPrompt();
           });
         };
