@@ -1289,6 +1289,11 @@ typedef enum { NonZero, EnsureZero } StringfyPolicy;
 #define kArray_size(A)            (((A)->bytesize)/sizeof(void *))
 #define kArray_SetSize(A, N)      ((kArrayVar *)A)->bytesize = ((N) * sizeof(void *))
 
+
+class kArray extends kObject {
+	Object[] ObjectItems;
+}
+
 struct kArrayVar {
 	kObjectHeader h;
 	size_t bytesize;
