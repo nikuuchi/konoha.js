@@ -341,32 +341,32 @@ void KEndKonohaContext()
 	KonohaContext_ExitCStack(kctx)
 }
 
-static void KonohaContext_EnterCStack(KonohaContext *kctx, void **bottom)
+void KonohaContext_EnterCStack(KonohaContext kctx, void **bottom)
 {
 	kctx.stack.cstack_bottom = bottom;
 	PLATAPI EventModule.EnterEventContext(kctx, NULL);
 }
 
-static void KonohaContext_ExitCStack(KonohaContext *kctx)
+void KonohaContext_ExitCStack(KonohaContext kctx)
 {
 	PLATAPI EventModule.ExitEventContext(kctx, NULL);
-	kctx->stack->cstack_bottom = NULL;
+	kctx.stack.cstack_bottom = NULL;
 }
 
-static kstatus_t MODSUGAR_loadScript(KonohaContext *kctx, const char *path, size_t len, KTraceInfo *trace)
+kstatus_t MODSUGAR_loadScript(KonohaContext kctx, const char path, size_t len, KTraceInfo trace)
 {
 	if(KGetParserContext(kctx) == NULL) {
-		KPARSERM->h.setupModelContext(kctx, (KRuntimeModel *)KPARSERM, 0/*lazy*/);
+		KPARSERM.h.setupModelContext(kctx, KPARSERM, 0/*lazy*/);
 	}
 	INIT_GCSTACK();
 	kpackageId_t packageId = KLIB KpackageId(kctx, "main", sizeof("main")-1, 0, _NEWID);
-	kNameSpace *ns = new_PackageNameSpace(kctx, packageId);
-	kstatus_t result = (kstatus_t)kNameSpace_LoadScript(kctx, ns, path, trace);
+	kNameSpace ns = new_PackageNameSpace(kctx, packageId);
+	kstatus_t result = kNameSpace_LoadScript(kctx, ns, path, trace);
 	RESET_GCSTACK();
 	return result;
 }
 
-KONOHA_EXPORT(kbool_t) Konoha_LoadScript(KonohaContext* kctx, const char *scriptname)
+KONOHA_EXPORT(kbool_t) Konoha_LoadScript(KonohaContext kctx, String scriptname)
 {
 	KBeginKonohaContext();
 	PLATAPI BEFORE_LoadScript(kctx, scriptname);
@@ -376,18 +376,15 @@ KONOHA_EXPORT(kbool_t) Konoha_LoadScript(KonohaContext* kctx, const char *script
 	return res;
 }
 
-KONOHA_EXPORT(kbool_t) Konoha_Eval(KonohaContext* kctx, const char *script, kfileline_t uline)
+KONOHA_EXPORT(kbool_t) Konoha_Eval(KonohaContext kctx, String script, kfileline_t uline)
 {
 	KBeginKonohaContext();
 	if(verbose_sugar) {
 		DUMP_P("\n>>>----\n'%s'\n------\n", script);
 	}
-	KPARSERM->h.setupModelContext(kctx, (KRuntimeModel *)KPARSERM, 0/*lazy*/);
+	KPARSERM.h.setupModelContext(kctx, KPARSERM, 0/*lazy*/);
 	kbool_t res = (kNameSpace_Eval(kctx, KNULL(NameSpace), script, uline, NULL/*trace*/) == K_CONTINUE);    // FIXME
 	KEndKonohaContext();
 	return res;
 }
 
-#ifdef __cplusplus
-}
-#endif
