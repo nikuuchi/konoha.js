@@ -235,74 +235,74 @@ void MODSUGAR_Init(KonohaContext kctx, KonohaContextVar ctx)
 }
 
 // boolean NameSpace.load(String path);
-static KMETHOD NameSpace_loadScript(KonohaContext *kctx, KonohaStack *sfp)
+KMETHOD NameSpace_loadScript(KonohaContext kctx, KonohaStack sfp)
 {
 	char pathbuf[512];
-	const char *path = PLATAPI formatTransparentPath(pathbuf, sizeof(pathbuf), KFileLine_textFileName(sfp[K_RTNIDX].calledFileLine), kString_text(sfp[1].asString));
+	String path = PLATAPI formatTransparentPath(pathbuf, sizeof(pathbuf), KFileLine_textFileName(sfp[K_RTNIDX].calledFileLine), kString_text(sfp[1].asString));
 	KMakeTrace(trace, sfp);
 	kNameSpace_LoadScript(kctx, sfp[0].asNameSpace, path, trace);
 }
 
 // boolean NameSpace.import(String pkgname);
-static KMETHOD NameSpace_ImportPackage(KonohaContext *kctx, KonohaStack *sfp)
+KMETHOD NameSpace_ImportPackage(KonohaContext kctx, KonohaStack sfp)
 {
 	KMakeTrace(trace, sfp);
 	kNameSpace_ImportPackage(kctx, sfp[0].asNameSpace, kString_text(sfp[1].asString), trace);
 }
 
 // boolean NameSpace.hate(String symbol);
-static KMETHOD NameSpace_hate(KonohaContext *kctx, KonohaStack *sfp)
+KMETHOD NameSpace_hate(KonohaContext kctx, KonohaStack sfp)
 {
-	kString *key = sfp[2].asString;
+	kString key = sfp[2].asString;
 	ksymbol_t keyword = KAsciiSymbol(kString_text(key), kString_size(key), _NEWID);
 	KMakeTrace(trace, sfp);
 	kNameSpace_RemoveSyntax(kctx, sfp[0].asNameSpace, keyword, trace);
 }
 
-static void kNameSpace_SetStaticFunction(KonohaContext *kctx, kNameSpace *ns, kArray *list, ktypeattr_t cid, KTraceInfo *trace)
+void kNameSpace_SetStaticFunction(KonohaContext kctx, kNameSpace ns, kArray list, ktypeattr_t cid, KTraceInfo trace)
 {
 	size_t i;
 	for(i = 0; i < kArray_size(list); i++) {
-		kMethod *mtd = list->MethodItems[i];
-		if(kMethod_Is(Static, mtd) && mtd->typeId == cid) {
-			uintptr_t mtdinfo = ((uintptr_t)cid | (((uintptr_t)mtd->mn) << (sizeof(ktypeattr_t) * 8)));
-			KLIB kNameSpace_SetConstData(kctx, ns, mtd->mn, VirtualType_StaticMethod, mtdinfo, trace);
+		kMethod mtd = list->MethodItems[i];
+		if(kMethod_Is(Static, mtd) && mtd.typeId == cid) {
+			int mtdinfo = ((int)cid | (((int)mtd->mn) << (sizeof(ktypeattr_t) * 8)));
+			KLIB kNameSpace_SetConstData(kctx, ns, mtd.mn, VirtualType_StaticMethod, mtdinfo, trace);
 		}
 	}
 }
 
 //## void NameSpace.useStaticFunc(Object o);
-static KMETHOD NameSpace_useStaticFunc(KonohaContext *kctx, KonohaStack *sfp)
+static KMETHOD NameSpace_useStaticFunc(KonohaContext kctx, KonohaStack sfp)
 {
 	KMakeTrace(trace, sfp);
-	KClass *ct = kObject_class(sfp[1].asObject);
-	kNameSpace *ns = sfp[0].asNameSpace;
-	kNameSpace_SetStaticFunction(kctx, ns, ct->classMethodList, ct->typeId, trace);
+	KClass ct = kObject_class(sfp[1].asObject);
+	kNameSpace ns = sfp[0].asNameSpace;
+	kNameSpace_SetStaticFunction(kctx, ns, ct.classMethodList, ct.typeId, trace);
 	while(ns != NULL) {
-		kNameSpace_SetStaticFunction(kctx, ns, ns->methodList_OnList, ct->typeId, trace);
+		kNameSpace_SetStaticFunction(kctx, ns, ns.methodList_OnList, ct.typeId, trace);
 		ns = ns->parentNULL;
 	}
 	KReturnVoid();
 }
 
 //## @Public @Const @Immutable @Coercion Symbol String.toSymbol();
-static KMETHOD String_toSymbol(KonohaContext *kctx, KonohaStack *sfp)
+static KMETHOD String_toSymbol(KonohaContext kctx, KonohaStack sfp)
 {
 	KReturnUnboxValue(KAsciiSymbol(kString_text(sfp[0].asString), kString_size(sfp[0].asString), _NEWID));
 }
 
 //## @Public @Const @Immutable @Coercion String Symbol.toString();
-static KMETHOD KSymbol_toString(KonohaContext *kctx, KonohaStack *sfp)
+static KMETHOD KSymbol_toString(KonohaContext kctx, KonohaStack sfp)
 {
 	ksymbol_t symbol = (ksymbol_t)sfp[0].intValue;
-	kString *s = KSymbol_GetString(kctx, KSymbol_Unmask(symbol));
+	kString s = KSymbol_GetString(kctx, KSymbol_Unmask(symbol));
 	if(KSymbol_Attr(symbol) != 0) {
 		KBuffer wb;
-		const char *prefix = KSymbol_prefixText(symbol);
-		KLIB KBuffer_Init(&(kctx->stack->cwb), &wb);
-		KLIB KBuffer_Write(kctx, &wb, prefix, strlen(prefix));
-		KLIB KBuffer_Write(kctx, &wb, kString_text(s), kString_size(s));
-		s = KLIB KBuffer_Stringfy(kctx, &wb, OnStack, StringPolicy_FreeKBuffer);
+		const char prefix = KSymbol_prefixText(symbol);
+		KLIB KBuffer_Init(kctx.stack.cwb, wb);
+		KLIB KBuffer_Write(kctx, wb, prefix, strlen(prefix));
+		KLIB KBuffer_Write(kctx, wb, kString_text(s), kString_size(s));
+		s = KLIB KBuffer_Stringfy(kctx, wb, OnStack, StringPolicy_FreeKBuffer);
 	}
 	KReturn(s);
 }
