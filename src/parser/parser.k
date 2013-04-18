@@ -34,43 +34,38 @@ Import("JavaScript.String");
 
 /* ************************************************************************ */
 
-//#define USING_SUGAR_AS_BUILTIN 1
-#define USE_AsciiToKonohaChar
+//const USING_SUGAR_AS_BUILTIN = 1;
+const USE_AsciiToKonohaChar;
 
-//#include "konoha3.h"
+//load("konoha3.h");
 //
 //
-#include "konoha3/import/methoddecl.h"
+load("konoha3/import/methoddecl.h");
 
 /* ************************************************************************ */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "konoha3.h"
+load("konoha3.h");
 
 // global variable
-KONOHA_EXPORT(int) verbose_sugar;
 int verbose_sugar = 0;
 
-#include "import/perror.h"
-#include "import/parser_class.h"
-#include "import/namespace.h"
-#include "import/token.h"
-#include "import/preprocess.h"
-#include "import/ast.h"
-#include "import/pattern.h"
-#include "import/typecheck.h"
-#include "import/syntax.h"
-#include "import/eval.h"
-#include "import/parser_dump.h"
-#include "import/visitor.h"
+load("import/perror.h");
+load("import/parser_class.h");
+load("import/namespace.h");
+load("import/token.h");
+load("import/preprocess.h");
+load("import/ast.h");
+load("import/pattern.h");
+load("import/typecheck.h");
+load("import/syntax.h");
+load("import/eval.h");
+load("import/parser_dump.h");
+load("import/visitor.h");
 
 /* ------------------------------------------------------------------------ */
 /* Sugar Global Functions */
 
-static kstatus_t kNameSpace_Eval(KonohaContext *kctx, kNameSpace *ns, const char *script, kfileline_t uline, KTraceInfo *trace)
+kstatus_t kNameSpace_Eval(KonohaContext kctx, kNameSpace ns, String script, kfileline_t uline, KTraceInfo trace)
 {
 	kstatus_t result;
 	KPARSERM->h.setupModelContext(kctx, (KRuntimeModel *)KPARSERM, 0/*lazy*/);
@@ -80,7 +75,7 @@ static kstatus_t kNameSpace_Eval(KonohaContext *kctx, kNameSpace *ns, const char
 		KTokenSeq_Push(kctx, tokens);
 		Tokenize(kctx, ns, script, uline, 0, tokens.tokenList);
 		KTokenSeq_End(kctx, tokens);
-		result = KLIB EvalTokenList(kctx, &tokens, trace);
+		result = EvalTokenList(kctx, tokens, trace);
 		KTokenSeq_Pop(kctx, tokens);
 	}
 	RESET_GCSTACK();
@@ -90,21 +85,21 @@ static kstatus_t kNameSpace_Eval(KonohaContext *kctx, kNameSpace *ns, const char
 /* ------------------------------------------------------------------------ */
 /* [KGetParserContext(kctx)] */
 
-static void KParserContext_Reftrace(KonohaContext *kctx, struct KModelContext *baseh, KObjectVisitor *visitor)
+void KParserContext_Reftrace(KonohaContext *kctx, struct KModelContext *baseh, KObjectVisitor *visitor)
 {
 }
 
-static void KParserContext_Free(KonohaContext *kctx, struct KModelContext *baseh)
+void KParserContext_Free(KonohaContext *kctx, struct KModelContext *baseh)
 {
 	KParserContext *base = (KParserContext *)baseh;
 	KLIB KArray_Free(kctx, &base->errorMessageBuffer);
 	KFree(base, sizeof(KParserContext));
 }
 
-static void SugarModule_Setup(KonohaContext *kctx, struct KRuntimeModel *def, int newctx)
+void SugarModule_Setup(KonohaContext *kctx, struct KRuntimeModel *def, int newctx)
 {
 	if(!newctx && kctx->localContexts[ParserModelIndex] == NULL) {
-		KParserContext *base = (KParserContext *)KCalloc_UNTRACE(sizeof(KParserContext), 1);
+		KParserContext *base = new KParserContext;
 		base->h.reftrace = KParserContext_Reftrace;
 		base->h.free     = KParserContext_Free;
 
@@ -118,12 +113,9 @@ static void SugarModule_Setup(KonohaContext *kctx, struct KRuntimeModel *def, in
 	}
 }
 
-KONOHA_EXPORT(kbool_t) Konoha_LoadScript(KonohaContext* kctx, const char *scriptname);
-KONOHA_EXPORT(kbool_t) Konoha_Eval(KonohaContext* kctx, const char *script, kfileline_t uline);
-
 void MODSUGAR_Init(KonohaContext *kctx, KonohaContextVar *ctx)
 {
-	KParserModel *mod = (KParserModel *)KCalloc_UNTRACE(sizeof(KParserModel), 1);
+	KParserModel *mod = new KParserModel;
 	mod->h.name     = "sugar";
 	mod->h.allocSize = sizeof(KParserModel);
 	mod->h.setupModelContext    = SugarModule_Setup;
