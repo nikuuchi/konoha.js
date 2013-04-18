@@ -307,7 +307,7 @@ static KMETHOD KSymbol_toString(KonohaContext kctx, KonohaStack sfp)
 	KReturn(s);
 }
 
-void LoadDefaultSugarMethod(KonohaContext *kctx, kNameSpace *ns)
+void LoadDefaultSugarMethod(KonohaContext kctx, kNameSpace ns)
 {
 	KSetKLibFunc(0, ReportScriptMessage,           TRACE_ReportScriptMessage,           NULL);
 	KSetKLibFunc(0, kNameSpace_RequirePackage,      kNameSpace_RequirePackage,      NULL);
@@ -332,12 +332,18 @@ void LoadDefaultSugarMethod(KonohaContext *kctx, kNameSpace *ns)
 // --------------------------------------------------------------------------
 /* Konoha C API */
 
-#define KBeginKonohaContext()  KonohaContext_EnterCStack(kctx, (void**)&kctx)
-#define KEndKonohaContext()    KonohaContext_ExitCStack(kctx)
+void KBeginKonohaContext()
+{
+	KonohaContext_EnterCStack(kctx, (void**)&kctx);
+}
+void KEndKonohaContext()
+{
+	KonohaContext_ExitCStack(kctx)
+}
 
 static void KonohaContext_EnterCStack(KonohaContext *kctx, void **bottom)
 {
-	kctx->stack->cstack_bottom = bottom;
+	kctx.stack.cstack_bottom = bottom;
 	PLATAPI EventModule.EnterEventContext(kctx, NULL);
 }
 
